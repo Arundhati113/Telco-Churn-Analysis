@@ -1,0 +1,544 @@
+---
+title: "Assignment 1"
+author: "Arundhati Das"
+date: "06/09/2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+Case Study 1A – Telco Churn
+
+1. Introduction – The client is a telecom company. They have an issue with customer churn.
+Currently, they want to improve their customer retention efforts. For this, they have engaged
+on a churn prediction exercise.
+
+2. Challenge – The customer has stated that the objective of the churn prediction exercise is
+to predict churn. That is, the model should be able to identify (based on past data), who is
+going to churn in the next time period.
+
+3. Your role – You are the lead data scientist for the project. In this phase, you have to confirm
+that you understand the business requirements (business understanding) as well as the data
+(data understanding) for the project.
+
+4. Details of the data – The customer has shared the data with your team. The data is in the
+form of a text file . The description of the various fields are
+given and the customer has stated that the target variable is “churn".
+
+5. (a) On the basis of the problem statement and the data provided, carry out the following
+steps for the client. The response for this exercise (Data Preprocessing and Exploratory
+Data Analysis) will be a report, with separate sections for the deliverables below.
+
+(i) Business Understanding – Goals & Success Criterion.
+(ii) Data Understanding – Data Exploration & Quality Report.
+
+(b) Perform initial analysis (Variable Selection & Dimension Reduction) to identify possible
+variables that could be impacting churn. Provide a report of the same.
+
+Introduction:
+
+Customer churn occurs when customers or subscribers stop doing business with a company or service.It is also referred as loss of clients or customers. One industry in which churn rates are particularly useful is the telecommunications industry, because most customers have multiple options from which to choose within a geographic location.In many geographical areas, several companies are competing for customers, making it easy for people to transfer from one provider to another.
+
+Churn rates are often used to indicate the strength of a company’s customer service division and its overall growth prospects. Lower churn rates suggest a company is, or will be, in a better or stronger competitive state.
+
+Data Preprocessing:
+A Telco Churn Data is being provided which  contains 1000 rows (customers) and 42 columns (features). The “churn” column is our target.Some of the features which were in 0-1 form,I replaced them with No & Yes respectively.In Gender column,I replaced 0 & 1 with Male & Female respectively.
+```{r}
+#reading data 
+df <- read.delim("C:/Users/AK DAS/Desktop/telco.txt")
+head(df)
+```
+
+
+```{r}
+#View structure and summary of the data
+dim(df)
+str(df)
+summary(df)
+
+```
+
+
+
+```{r }
+#To view the column names
+names(df)
+
+```
+
+We use sapply to check the number if missing values in each columns. 
+
+```{r }
+#checking for the missing values
+sapply(df, function(x) sum(is.na(x)))
+
+
+```
+
+I found that there are some missing values in logtoll,logequi,logcard & logcard columns. I removed all rows with missing values.
+```{r }
+#removing all rows with missing values
+df <- df[complete.cases(df), ]
+#no missing values
+sapply(df, function(x) sum(is.na(x)))
+
+```
+
+```{r }
+#min & max tenure
+min(df$tenure); max(df$tenure)
+
+```
+Since the minimum tenure is 2 months and maximum tenure is 72 months, I grouped them into five tenure groups: “0–12 Month”, “12–24 Month”, “24–48 Months”, “48–60 Month”, “> 60 Month”
+
+```{r }
+#grouping them into five tenure groups: “0–12 Month”, “12–24 Month”, “24–48 Months”, “48–60 Month”, “> 60 Month”
+group_tenure <- function(tenure){
+  if (tenure >= 0 & tenure <= 12){
+    return('0-12 Month')
+  }else if(tenure > 12 & tenure <= 24){
+    return('12-24 Month')
+  }else if (tenure > 24 & tenure <= 48){
+    return('24-48 Month')
+  }else if (tenure > 48 & tenure <=60){
+    return('48-60 Month')
+  }else if (tenure > 60){
+    return('> 60 Month')
+  }
+}
+df$tenure_group <- sapply(df$tenure,group_tenure)
+df$tenure_group <- as.factor(df$tenure_group)
+df$tenure_group
+
+
+```
+
+Exploratory data analysis:(Variable Selection)
+```{r }
+#Gender Overview
+library(ggplot2)
+ggplot(df) +
+  geom_bar(aes(x = gender, fill = churn), position = "dodge")
+library(magrittr)
+library(dplyr)
+df %>%
+  group_by(gender) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+df %>%
+  group_by(gender, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+```
+Roughly there are 53.4% female customers  46.5% male customers. On the other hand, of the 53% females , 45% churn & Of the 46% males, only 27% churn.
+
+```{r }
+#Senior Citizen overview
+ggplot(df) +
+  geom_bar(aes(x = retire, fill = churn), position = "dodge")
+
+df %>%
+  group_by(retire) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(retire, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+```
+There are 3% customers who are retired & out of those 25% of the retired customers churn.
+
+```{r }
+#Age overview
+ggplot(df) +
+  geom_bar(aes(x = age, fill = churn), position = "dodge")
+df %>%
+  group_by(age) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(age, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+```
+Age group of customers:20-69
+100% Customers churn having age group 20,30,49,50
+
+
+
+```{r }
+#Internet overview
+ggplot(df) +
+  geom_bar(aes(x = internet, fill = churn), position = "dodge")
+df %>%
+  group_by(internet) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(internet, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+```
+Roughtly 77% of the customers have internet & out of them around 37.2% of the customers churn.Roughtly 22% of the customers  do not have internet & out of them around 37.9% of the customers churn.
+
+
+```{r }
+#Tenure overview
+ggplot(df) +
+  geom_bar(aes(x = tenure, fill = churn), position = "dodge")
+df %>%
+  group_by(tenure) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(tenure, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+Tenure Period:2-72 months
+100% Customers churn having tenure 3,4,6,8,11,15,16,19,24,32,45,58,59 & 65 months.
+
+```{r }
+#Paging service overview
+ggplot(df) +
+  geom_bar(aes(x =pager, fill = churn), position = "dodge")
+df %>%
+  group_by(pager) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(pager, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+Around 85% of the customers use Pager & out of them around 39% of the customers churn.
+
+```{r }
+#Voice mail overview
+ggplot(df) +
+  geom_bar(aes(x =voice, fill = churn), position = "dodge")
+df %>%
+  group_by(voice) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(voice, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+Around 85% of the customers used Voice Mail & out of those around 41% of the customers churn.
+
+```{r }
+#Multiple lines overview
+ggplot(df) +
+  geom_bar(aes(x =multline, fill = churn), position = "dodge")
+df %>%
+  group_by(multline) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(multline, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+```
+Around 68% of the customers used Multiple Lines & out of those around 32.5% of the customers churn.
+
+```{r }
+#Customer Churn overview
+ggplot(df) +
+  geom_bar(aes(x =churn, fill = churn), position = "dodge")
+df %>%
+  group_by(churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
+```
+Around 37% of the customers churn.
+
+```{r }
+#Calling card service overview
+ggplot(df) +
+  geom_bar(aes(x =callcard, fill = churn), position = "dodge")
+df %>%
+  group_by(callcard) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(callcard, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+```
+All customers are using the calling card service .Around 37.4% of the customers churn.
+```{r }
+#Region overview
+ggplot(df) +
+  geom_bar(aes(x =region, fill = churn), position = "dodge")
+df %>%
+  group_by(region) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(region, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+Around 32%,37.4% & 30.5% of the customers belong to region 1,2 & 3 respectively.
+Churn % in region 1: 40.4%
+Churn % in region 2: 34.6%
+Churn % in region 3: 37.5%
+
+```{r }
+#Income overview
+ggplot(df) +
+  geom_bar(aes(x =income, fill = churn), position = "dodge")
+df %>%
+  group_by(income) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(income, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+Customers having more income are most likely to churn.
+
+```{r }
+#Marital overview
+ggplot(df) +
+  geom_bar(aes(x =marital, fill = churn), position = "dodge")
+df %>%
+  group_by(marital) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(marital, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+Around 51% of the customers are married & out of them around 31% of the customers churn.
+
+```{r }
+#Toll free overview
+ggplot(df) +
+  geom_bar(aes(x =tollfree, fill = churn), position = "dodge")
+df %>%
+  group_by(tollfree) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(tollfree, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+All are using the tollfree service & out of them around 37% of the customers churn.
+
+```{r }
+#Wireless service overview
+ggplot(df) +
+  geom_bar(aes(x =wireless, fill = churn), position = "dodge")
+df %>%
+  group_by(wireless) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(wireless, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+  
+
+
+```
+All are using the wireless services & out of them around 37% of the customers churn.
+ 
+```{r }
+#Call-waiting service overview
+ggplot(df) +
+  geom_bar(aes(x =callwait, fill = churn), position = "dodge")
+df %>%
+  group_by(callwait) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(callwait, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+```
+90% of the customers' calls were waiting & out of the around 38% of the customers churn.
+
+```{r }
+#Call-forwarding service overview
+ggplot(df) +
+  geom_bar(aes(x =forward, fill = churn), position = "dodge")
+df %>%
+  group_by(forward) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(forward, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+Around 91% of the customers calls were forwarded out of them around 39% of the customers churn.
+
+```{r }
+#3 way calling service overview
+ggplot(df) +
+  geom_bar(aes(x =confer, fill = churn), position = "dodge")
+df %>%
+  group_by(confer) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(confer, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+```
+Almost 90% of the customers did conference calls out of which around 38% of the customers churn.
+
+```{r }
+#customer category overview
+ggplot(df) +
+  geom_bar(aes(x =custcat, fill = churn), position = "dodge")
+df %>%
+  group_by(custcat) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+df %>%
+  group_by(custcat, churn) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+Only customers belonging to category 3 & 4 churn.
+
+
+Correlation between numeric variables:
+
+```{r }
+# Correlation plot
+df1 <- sapply(df, is.numeric)
+corr.matrix <- cor(df[,df1])
+library(ggplot2)
+library(ggcorrplot)
+ggcorrplot(corr.matrix)
+
+```
+
+
+```{r }
+#Histogram of Numeric variables grouped by Churn
+for (i in c(2:length(colnames(df)))){
+  if (is.numeric(df[,i]) == T ){
+    print(ggplot(df, aes(x = df[,i], fill = churn)) + 
+            geom_histogram(bins = 10) + labs(x = colnames(df)[i]))
+  }
+}
+```
+
+Exploratory data analysis (Dimensionality Reduction):
+
+```{r }
+#reading data 
+df1 <- read.delim("C:/Users/AK DAS/Desktop/Business Analytics/telco.txt")
+data<-prcomp(df1[,c(8:35,20,21)],center=TRUE,scale.=TRUE)
+library(devtools)
+str(data)
+biplot(data,scale=0)
+```
+
+The biplot suggests the directions of all the variables. It states that internet, Equipment last month etc. convey the same data value and explain the same variances as these vectors are in the same direction.
+
+Summary:
+
+•	Female customers churn more than the male customers.
+
+•	Retire doesn't matter that much as there are only 3% of the customers who are retired.
+
+•	Only younger & middle aged customers are most likely to churn.
+
+•	Having or not having internet does not matter that much in customer churn as the percentage of the customers churning in both scenarios are almost 37%.
+
+•	Customers having less tenure are most likely to churn
+
+•	Customers using Pager,Wireless services,Voice Mail,Multiple lines,Calling card service,toll free service are most likely to churn
+
+•	Customers whose calls are waiting & forwarded are most likely to churn.
+
+•	People living in region 1 are most likely to churn.
+
+•	Customers having more income are most likely to churn.
+
+•	Customers belonging to only category 3 & 4 churn.
+
+•	In dimension reduction,the biplot suggests the directions of all the variables. It states that internet, Equipment last month etc. convey the same data value and explain the same variances as these vectors are in the same direction.
+
+
+Telecommunication industry always suffers from a very high churn rates when one industry offers a better plan than the previous.There is a high possibility of the customer churning from the present to a better plan.In such a scenario it is very difficult to avoid losses but through prediction we can keep it to a minimal level. 
